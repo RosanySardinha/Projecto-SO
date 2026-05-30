@@ -1,3 +1,4 @@
+
 #include <stdlib.h>
 #include <assert.h>
 #include <stdio.h>
@@ -11,10 +12,8 @@
 #define MAX_PRIORITY 15 
 #define QUANTUM_BASE 5
 
-/* 
- * Bloco de Controle de Thread (TCB):
- * Guarda o estado, prioridade, quantum e contexto de cada tarefa no sistema.
- */
+ // Guarda o estado, prioridade, quantum e contexto de cada tarefa no sistema.
+ 
 struct _sthread {
     sthread_ctx_t *saved_ctx;         
     sthread_start_func_t start_routine_ptr; 
@@ -28,10 +27,8 @@ struct _sthread {
     struct _sthread *next;            
 };
 
-/* 
- * priority_array_t:
- * Matriz de filas de prioridade do escalonador O(1) controlada por um bitmap.
- */
+ // Matriz de filas de prioridade do escalonador O(1) controlada por um bitmap.
+ 
 typedef struct {
     unsigned int bitmap;                       
     struct _sthread *queue[MAX_PRIORITY];      
@@ -54,10 +51,9 @@ static long Clock;
 
 #define CLOCK_TICK 10000              
 
-/* 
- * dequeue_next_active:
- * Retira a tarefa pronta de maior prioridade usando o bitmap em tempo O(1).
- */
+
+  //Retira a tarefa pronta de maior prioridade usando o bitmap em tempo O(1).
+ 
 struct _sthread* dequeue_next_active(void) {
     if (active_array->bitmap == 0) return NULL;
     
@@ -75,10 +71,8 @@ struct _sthread* dequeue_next_active(void) {
     return thread;
 }
 
-/* 
- * enqueue_thread:
- * Insere uma tarefa no fim da fila correspondente à sua prioridade e liga o bit.
- */
+ // Insere uma tarefa no fim da fila correspondente Ã  sua prioridade e liga o bit.
+ 
 void enqueue_thread(priority_array_t *array, struct _sthread *thread) {
     int prio = thread->priority;
     thread->next = NULL;
@@ -92,10 +86,8 @@ void enqueue_thread(priority_array_t *array, struct _sthread *thread) {
     array->tail[prio] = thread;
 }
 
-/* 
- * is_thread_in_array:
- * Procura se uma thread com determinado ID existe dentro da matriz de prioridades.
- */
+ // Procura se uma thread com determinado ID existe dentro da matriz de prioridades.
+ 
 static int is_thread_in_array(priority_array_t *array, int tid) {
     for (int i = 0; i < MAX_PRIORITY; i++) {
         struct _sthread *curr = array->queue[i];
@@ -110,10 +102,8 @@ static int is_thread_in_array(priority_array_t *array, int tid) {
 void sthread_user_exit(void *ret);
 void sthread_user_free(struct _sthread *thread);
 
-/* 
- * sthread_aux_start:
- * Função auxiliar que inicia a tarefa e garante a chamada ao Exit quando ela terminar.
- */
+ // FunÃ§Ã£o auxiliar que inicia a tarefa e garante a chamada ao Exit quando ela terminar.
+ 
 void sthread_aux_start(void) {
     splx(LOW);
     active_thr->start_routine_ptr(active_thr->args);
@@ -122,10 +112,8 @@ void sthread_aux_start(void) {
 
 void sthread_user_dispatcher(void);
 
-/* 
- * sthread_user_init:
- * Inicializa as listas do sistema, as matrizes do escalonador e a thread principal.
- */
+ // Inicializa as listas do sistema, as matrizes do escalonador e a thread principal.
+ 
 void sthread_user_init(void) {
     active_array = &array_a;
     expired_array = &array_b; 
@@ -160,10 +148,8 @@ void sthread_user_init(void) {
     
     sthread_time_slices_init(sthread_user_dispatcher, CLOCK_TICK);
 }
-/* 
- * sthread_user_create:
- * Aloca uma nova thread, configura sua prioridade inicial e a insere nas Ativas.
- */
+ // Aloca uma nova thread, configura sua prioridade inicial e a insere nas Ativas.
+ 
 sthread_t sthread_user_create(sthread_start_func_t start_routine, void *arg) {
     struct _sthread *new_thread = (struct _sthread*)malloc(sizeof(struct _sthread));
     sthread_ctx_start_func_t func = sthread_aux_start;
@@ -184,11 +170,8 @@ sthread_t sthread_user_create(sthread_start_func_t start_routine, void *arg) {
     splx(LOW);
     return new_thread;
 }
-
-/* 
- * sthread_user_exit:
- * Finaliza a thread atual, acorda quem dependia dela no Join e chama o escalonador.
- */
+ // Finaliza a thread atual, acorda quem dependia dela no Join e chama o escalonador.
+ 
 void sthread_user_exit(void *ret) {
    splx(HIGH);
    int is_zombie = 1;
@@ -236,11 +219,8 @@ void sthread_user_exit(void *ret) {
    sthread_switch(old_thr->saved_ctx, active_thr->saved_ctx);
    splx(LOW);
 }
-
-/* 
- * sthread_user_join:
- * Suspende a execução da thread atual até que a thread alvo termine.
- */
+ //Suspende a execuÃ§Ã£o da thread atual atÃ© que a thread alvo termine.
+ 
 int sthread_user_join(sthread_t thread, void **value_ptr) {
    splx(HIGH);
    int found = 0;
@@ -296,10 +276,9 @@ int sthread_user_join(sthread_t thread, void **value_ptr) {
    return 0;
 }
 
-/* 
- * sthread_user_sleep:
- * Bloqueia a thread atual por um determinado período de tempo (ticks do relógio).
- */
+
+ // Bloqueia a thread atual por um determinado perÃ­odo de tempo (ticks do relÃ³gio).
+ 
 int sthread_user_sleep(int time) {
    splx(HIGH);
    long num_ticks = 10 * time / CLOCK_TICK;
@@ -320,10 +299,9 @@ int sthread_user_sleep(int time) {
    splx(LOW);
    return 0;
 }
-/* 
- * sthread_user_dispatcher:
- * Despachante ativado por sinal de hardware. Controla o quantum e acorda tarefas em sleep.
- */
+ 
+ // Despachante ativado por sinal de hardware. Controla o quantum e acorda tarefas em sleep.
+ 
 void sthread_user_dispatcher(void) {
    splx(HIGH);
    Clock++;
@@ -367,10 +345,9 @@ void sthread_user_dispatcher(void) {
    splx(LOW);
 }
 
-/* 
- * sthread_user_yield:
- * Libera voluntariamente o processador colocando a thread de volta na lista de Ativas.
- */
+
+ //Libera voluntariamente o processador colocando a thread de volta na lista de Ativas.
+ 
 void sthread_user_yield(void) {
   splx(HIGH);
   struct _sthread *old_thr = active_thr;
@@ -387,10 +364,9 @@ void sthread_user_yield(void) {
   splx(LOW);
 }
 
-/* 
- * _sthread_mutex:
- * Estrutura de dados para o bloqueio de exclusão mútua simples (Mutex).
- */
+
+ // Estrutura de dados para o bloqueio de exclusÃ£o mÃºtua simples (Mutex).
+ 
 struct _sthread_mutex {
   lock_t l;                   
   struct _sthread *thr;       
@@ -408,10 +384,8 @@ void sthread_user_mutex_free(sthread_mutex_t lock) {
   delete_queue(lock->queue); free(lock);
 }
 
-/* 
- * sthread_user_mutex_lock:
- * Tranca o recurso crítico ou bloqueia a thread na fila se ele já estiver ocupado.
- */
+ // Tranca o recurso crÃ­tico ou bloqueia a thread na fila se ele jÃ¡ estiver ocupado.
+ 
 void sthread_user_mutex_lock(sthread_mutex_t lock) {
   while(atomic_test_and_set(&(lock->l))) {} 
   if(lock->thr == NULL){
@@ -429,10 +403,8 @@ void sthread_user_mutex_lock(sthread_mutex_t lock) {
   }
 }
 
-/* 
- * sthread_user_mutex_unlock:
- * Libera a trava do recurso e transfere para a próxima tarefa aguardando na fila.
- */
+ //Libera a trava do recurso e transfere para a prÃ³xima tarefa aguardando na fila.
+ 
 void sthread_user_mutex_unlock(sthread_mutex_t lock) {
   if(lock->thr != active_thr){ printf("unlock without lock!\n"); return; }
   while(atomic_test_and_set(&(lock->l))) {}
@@ -451,10 +423,8 @@ void sthread_user_mutex_unlock(sthread_mutex_t lock) {
   atomic_clear(&(lock->l));
 }
 
-/* 
- * _sthread_mon:
- * Estrutura de Monitores para sincronização condicional complexa entre tarefas.
- */
+ // Estrutura de Monitores para sincronizaÃ§Ã£o condicional complexa entre tarefas.
+ 
 struct _sthread_mon {
  	sthread_mutex_t mutex;
 	queue_t* queue;
@@ -475,10 +445,9 @@ void sthread_user_monitor_free(sthread_mon_t mon) {
 void sthread_user_monitor_enter(sthread_mon_t mon) { sthread_user_mutex_lock(mon->mutex); }
 void sthread_user_monitor_exit(sthread_mon_t mon) { sthread_user_mutex_unlock(mon->mutex); }
 
-/* 
- * sthread_user_monitor_wait:
- * Libera o mutex interno e bloqueia a tarefa em uma fila condicional até ser acordada.
- */
+
+ // Libera o mutex interno e bloqueia a tarefa em uma fila condicional atÃ© ser acordada.
+ 
 void sthread_user_monitor_wait(sthread_mon_t mon) {
   if(mon->mutex->thr != active_thr){ printf("monitor wait called outside monitor\n"); return; }
   struct _sthread *temp = active_thr; queue_insert(mon->queue, temp);
@@ -493,10 +462,9 @@ void sthread_user_monitor_wait(sthread_mon_t mon) {
   sthread_user_mutex_lock(mon->mutex); 
 }
 
-/* 
- * sthread_user_monitor_signal:
- * Acorda uma tarefa bloqueada na fila condicional movendo-a para a fila do mutex.
- */
+
+ // Acorda uma tarefa bloqueada na fila condicional movendo-a para a fila do mutex.
+ 
 void sthread_user_monitor_signal(sthread_mon_t mon) {
   if(mon->mutex->thr != active_thr){ printf("monitor signal called outside monitor\n"); return; }
   while(atomic_test_and_set(&(mon->mutex->l))) {}
@@ -506,10 +474,9 @@ void sthread_user_monitor_signal(sthread_mon_t mon) {
   atomic_clear(&(mon->mutex->l));
 }
 
-/* 
- * Funções Dummy:
- * Mantidas com avisos textuais apenas para garantir compatibilidade de testes cruzados.
- */
+
+ // Mantidas com avisos textuais apenas para garantir compatibilidade de testes cruzados.
+ 
 sthread_mon_t sthread_dummy_monitor_init() { printf("WARNING: pthreads do not include monitors!\n"); return NULL; }
 void sthread_dummy_monitor_free(sthread_mon_t mon) { printf("WARNING: pthreads do not include monitors!\n"); }
 void sthread_dummy_monitor_enter(sthread_mon_t mon) { printf("WARNING: pthreads do not include monitors!\n"); }
@@ -517,9 +484,7 @@ void sthread_dummy_monitor_exit(sthread_mon_t mon) { printf("WARNING: pthreads d
 void sthread_dummy_monitor_wait(sthread_mon_t mon) { printf("WARNING: pthreads do not include monitors!\n"); }
 void sthread_dummy_monitor_signal(sthread_mon_t mon) { printf("WARNING: pthreads do not include monitors!\n"); }
 
-/* 
- * sthread_user_free:
- * Libera a memória física do contexto e da estrutura TCB da tarefa concluída.
+
+ // Libera a memÃ³ria fÃ­sica do contexto e da estrutura TCB da tarefa concluÃ­da.
  */
 void sthread_user_free(struct _sthread *thread) { sthread_free_ctx(thread->saved_ctx); free(thread); }
-
